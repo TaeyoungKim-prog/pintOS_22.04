@@ -131,8 +131,6 @@ void wakeup_thread(int64_t ticks);
 void thread_block (void);
 void thread_unblock (struct thread *);
 
-bool compare_wakeup_time(struct list_elem *a, struct list_elem *b, void *aux UNUSED);
-
 struct thread *thread_current (void);
 tid_t thread_tid (void);
 const char *thread_name (void);

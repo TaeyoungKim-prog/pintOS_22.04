@@ -96,14 +96,6 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
    finishes. */
 
 
-bool
-compare_wakeup_time(struct list_elem *a, struct list_elem *b, void *aux UNUSED) {
-
-  return list_entry(a,struct thread,elem)->wakeup_time >
-         list_entry(b,struct thread,elem)->wakeup_time;
-
-}
-
 void
 sleep_thread(int64_t wake_thread_up_after_these_ticks){
 	/*
@@ -119,7 +111,7 @@ sleep_thread(int64_t wake_thread_up_after_these_ticks){
 
 	enum intr_level old_level = intr_disable ();
 	cur->wakeup_time = wake_thread_up_after_these_ticks;
-	list_insert_ordered(&sleep_list, &cur->elem, compare_wakeup_time, 0);
+	list_push_back(&sleep_list, &cur->elem);
 	thread_block();
 	intr_set_level (old_level);
 }
@@ -147,7 +139,7 @@ while (now_elem != list_end(&sleep_list))
 	}
 	else
 	{
-		break;
+		now_elem = list_next(now_elem);
 	}
 }
 

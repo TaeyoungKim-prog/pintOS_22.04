@@ -125,7 +125,7 @@ sleep_thread(int64_t wake_thread_up_after_these_ticks){
 }
 
 void
-wakeup_thread(int64_t tick_elapsed_from_start){
+wakeup_thread(int64_t tick_from_start){
 	/*
 		0. check if any thread's wakeup time is smaller than time elapsed(tick)
 		1. pop out thread from sleep list	
@@ -133,17 +133,36 @@ wakeup_thread(int64_t tick_elapsed_from_start){
 
 		else 1. break while loop
 	*/
+
+struct list_elem *now_elem = list_begin(&sleep_list);
+
+while (now_elem != list_end(&sleep_list))
+{
+	struct thread *now_thread = list_entry(now_elem, struct thread, elem);
+	int64_t waketime = now_thread->wakeup_time;
+	if(tick_from_start >= waketime)
+	{
+		now_elem = list_remove(now_elem);
+		thread_unblock(now_thread);
+	}
+	else
+	{
+		break;
+	}
+}
+
+/*
   struct list_elem *curr_elem = list_begin(&sleep_list);
 
-  while(curr_elem != list_end (&sleep_list))
+  while(curr_elem != list_end(&sleep_list))
   {
     struct thread *thread_curr_elem = list_entry(curr_elem, struct thread, elem);
-	if(tick_elapsed_from_start >= thread_curr_elem->wakeup_time)
+	int64_t wake_time = thread_curr_elem->wakeup_time;
+	if(tick_elapsed_from_start >= wake_time)
 	{
 		//put curr elem to ready list
 		curr_elem = list_remove(curr_elem);
 		thread_unblock(thread_curr_elem);
-
 	}
 	else
 	{
@@ -151,9 +170,7 @@ wakeup_thread(int64_t tick_elapsed_from_start){
 	}
   }
 
-    
-
-
+  */
 
 }
 
@@ -174,6 +191,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */

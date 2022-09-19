@@ -93,9 +93,49 @@ timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
 
 	ASSERT (intr_get_level () == INTR_ON);
+
+	/*
 	while (timer_elapsed (start) < ticks)
 		thread_yield ();
+	*/
+	
+	int64_t wake_thread_up_after_these_ticks = ticks+start;
+
+	sleep_thread(wake_thread_up_after_these_ticks);
 }
+
+
+bool
+compare_wakeup_time(struct list_elem *a, struct list_elem *b, void *aux) {
+
+  return list_entry(a,struct thread,elem)->wakeup_time >
+
+         list_entry(b,struct thread,elem)->wakeup_time;
+
+}
+
+void
+sleep_thread(int64_t wake_thread_up_after_these_ticks){
+	/*
+	
+		1. put into sleep_list
+
+	*/
+
+	struct thread *cur = thread_current();
+	cur->wakeup_time = wake_thread_up_after_these_ticks;
+
+	enum intr_level old_level = intr_disable ();
+	list_insert_ordered(&sleep_list, &cur->elem, compare_wakeup_time, NULL);
+	thread_block();
+	intr_set_level (old_level);
+
+	
+
+
+}
+
+
 
 /* Suspends execution for approximately MS milliseconds. */
 void

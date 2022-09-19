@@ -28,6 +28,8 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +94,70 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
 
    It is not safe to call thread_current() until this function
    finishes. */
+
+
+bool
+compare_wakeup_time(struct list_elem *a, struct list_elem *b, void *aux UNUSED) {
+
+  return list_entry(a,struct thread,elem)->wakeup_time >
+         list_entry(b,struct thread,elem)->wakeup_time;
+
+}
+
+void
+sleep_thread(int64_t wake_thread_up_after_these_ticks){
+	/*
+	
+		1. put into sleep_list
+		2. using list ordered can make list ordered according to wakeup time.						
+
+	*/
+
+	struct thread *cur = thread_current();
+
+	ASSERT (cur != idle_thread);
+
+	enum intr_level old_level = intr_disable ();
+	cur->wakeup_time = wake_thread_up_after_these_ticks;
+	list_insert_ordered(&sleep_list, &cur->elem, compare_wakeup_time, 0);
+	thread_block();
+	intr_set_level (old_level);
+}
+
+void
+wakeup_thread(int64_t tick_elapsed_from_start){
+	/*
+		0. check if any thread's wakeup time is smaller than time elapsed(tick)
+		1. pop out thread from sleep list	
+		2. unblock	thread
+
+		else 1. break while loop
+	*/
+  struct list_elem *curr_elem = list_begin(&sleep_list);
+
+  while(curr_elem != list_end (&sleep_list))
+  {
+    struct thread *thread_curr_elem = list_entry(curr_elem, struct thread, elem);
+	if(tick_elapsed_from_start >= thread_curr_elem->wakeup_time)
+	{
+		//put curr elem to ready list
+		curr_elem = list_remove(curr_elem);
+		thread_unblock(thread_curr_elem);
+
+	}
+	else
+	{
+		break;
+	}
+  }
+
+    
+
+
+
+}
+
+
 void
 thread_init (void) {
 	ASSERT (intr_get_level () == INTR_OFF);

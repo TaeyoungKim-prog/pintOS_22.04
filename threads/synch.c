@@ -191,7 +191,21 @@ lock_acquire (struct lock *lock) {
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
 
+	struct thread *current_t = thread_current ();
+	if (lock->holder) {
+		current_t->waiting_lock = lock;
+		list_insert_ordered (&lock->holder->list_donate, &current_t->list_donate_elem, priority_comparison_donation, 0);
+		
+		for (int i = 0; i < 10; i++){
+			if (!current_t->waiting_lock) break;
+			current_t->waiting_lock->holder->priority = current_t->priority;
+			current_t = current_t->waiting_lock->holder;
+  }
+	}
+
 	sema_down (&lock->semaphore);
+
+	current_t->waiting_lock = NULL;
 	lock->holder = thread_current ();
 }
 
@@ -224,6 +238,24 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
+
+	struct list_elem *element;
+	struct thread *current_t = thread_current ();
+
+	for (element = list_begin (&current_t->list_donate); element != list_end (&current_t->list_donate); element = list_next (element)){
+		struct thread *t = list_entry (element, struct thread, list_donate_elem);
+		if (t->waiting_lock == lock)
+		list_remove (&t->list_donate_elem);
+	}
+	current_t->priority = current_t->original_priority;
+  
+	if (!list_empty (&current_t->list_donate)) {
+		list_sort (&current_t->list_donate, priority_comparison_donation, 0);
+
+    struct thread *front = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
+    if (front->priority > current_t->priority)
+      current_t->priority = front->priority;
+  }
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);

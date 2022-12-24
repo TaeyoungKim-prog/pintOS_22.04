@@ -389,7 +389,20 @@ thread_yield (void) {
 void
 thread_set_priority (int new_priority) {
 
-	thread_current ()->priority = new_priority;
+	thread_current()->original_priority = new_priority;
+
+	struct thread *current_t = thread_current ();
+
+	current_t->priority = current_t->original_priority;
+  
+	if (!list_empty (&current_t->list_donate)) {
+		list_sort (&current_t->list_donate, priority_comparison_donation, 0);
+
+    struct thread *front = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
+    if (front->priority > current_t->priority)
+      current_t->priority = front->priority;
+  	}
+
 	ifNewThreadHigherPriority_threadYield();
 }
 
@@ -488,6 +501,10 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	
+	t->original_priority = priority;
+	t->waiting_lock = NULL;
+	list_init (&t->list_donate);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -684,4 +701,11 @@ ifNewThreadHigherPriority_threadYield (void)
 {
     if (!list_empty (&ready_list) && thread_current()->priority < list_entry (list_front (&ready_list), struct thread, elem)->priority)
         thread_yield ();
+}
+
+bool
+priority_comparison_donation (const struct list_elem *l, const struct list_elem *s, void *aux UNUSED)
+{
+	return list_entry (l, struct thread, list_donate_elem)->priority
+		 > list_entry (s, struct thread, list_donate_elem)->priority;
 }

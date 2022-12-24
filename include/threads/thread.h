@@ -94,6 +94,11 @@ struct thread {
 	
 	int64_t wakeup_time;
 
+	int original_priority;
+    struct lock *waiting_lock;
+    struct list list_donate;
+    struct list_elem list_donate_elem;
+
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
 
@@ -153,5 +158,10 @@ void ifNewThreadHigherPriority_threadYield (void);
 bool priority_comparison(const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
 
 bool sema_priority_comparison (const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
+
+
+bool priority_comparison_donation (const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
+
+
 
 #endif /* threads/thread.h */

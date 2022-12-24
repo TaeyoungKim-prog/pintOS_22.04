@@ -330,14 +330,11 @@ cond_broadcast (struct condition *cond, struct lock *lock) {
 }
 
 bool 
-sema_priority_comparison (const struct list_elem *l, const struct list_elem *s, void *aux UNUSED)
+sema_priority_comparison (const struct list_elem *f, const struct list_elem *s, void *aux UNUSED)
 {
-	struct semaphore_elem *l_sema = list_entry (l, struct semaphore_elem, elem);
-	struct semaphore_elem *s_sema = list_entry (s, struct semaphore_elem, elem);
+	struct list *wait_first_semaphore = &(list_entry (f, struct semaphore_elem, elem)->semaphore.waiters);
+	struct list *wait_second_semaphore = &(list_entry (s, struct semaphore_elem, elem)->semaphore.waiters);
 
-	struct list *waiter_l_sema = &(l_sema->semaphore.waiters);
-	struct list *waiter_s_sema = &(s_sema->semaphore.waiters);
-
-	return list_entry (list_begin (waiter_l_sema), struct thread, elem)->priority
-		 > list_entry (list_begin (waiter_s_sema), struct thread, elem)->priority;
+	return list_entry (list_begin (wait_first_semaphore), struct thread, elem)->priority
+		 > list_entry (list_begin (wait_second_semaphore), struct thread, elem)->priority;
 }

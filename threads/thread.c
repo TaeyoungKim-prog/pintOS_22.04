@@ -682,9 +682,6 @@ priority_comparison(const struct list_elem *l, const struct list_elem *s, void *
 void 
 ifNewThreadHigherPriority_threadYield (void)
 {
-	int current_thread_priority = thread_current()->priority;
-	int first_readyList_priority = list_entry (list_front (&ready_list), struct thread, elem)->priority;
-
-    if (!list_empty (&ready_list) && current_thread_priority < first_readyList_priority)
+    if (!list_empty (&ready_list) && thread_current()->priority < list_entry (list_front (&ready_list), struct thread, elem)->priority)
         thread_yield ();
 }

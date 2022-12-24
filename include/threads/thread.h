@@ -152,4 +152,6 @@ void ifNewThreadHigherPriority_threadYield (void);
 
 bool priority_comparison(const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
 
+bool sema_priority_comparison (const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
+
 #endif /* threads/thread.h */

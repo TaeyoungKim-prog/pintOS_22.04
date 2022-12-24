@@ -397,10 +397,9 @@ thread_set_priority (int new_priority) {
   
 	if (!list_empty (&current_t->list_donate)) {
 		list_sort (&current_t->list_donate, priority_comparison_donation, 0);
-
-    struct thread *front = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
-    if (front->priority > current_t->priority)
-      current_t->priority = front->priority;
+		struct thread *first_thread = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
+		if (current_t->priority < first_thread->priority)
+		current_t->priority = first_thread->priority;
   	}
 
 	ifNewThreadHigherPriority_threadYield();

@@ -242,20 +242,22 @@ lock_release (struct lock *lock) {
 	struct list_elem *element;
 	struct thread *current_t = thread_current ();
 
-	for (element = list_begin (&current_t->list_donate); element != list_end (&current_t->list_donate); element = list_next (element)){
+	element = list_begin (&current_t->list_donate);
+	while (element != list_end (&current_t->list_donate)){
 		struct thread *t = list_entry (element, struct thread, list_donate_elem);
 		if (t->waiting_lock == lock)
 		list_remove (&t->list_donate_elem);
+		element = list_next (element);
 	}
+
 	current_t->priority = current_t->original_priority;
   
 	if (!list_empty (&current_t->list_donate)) {
 		list_sort (&current_t->list_donate, priority_comparison_donation, 0);
-
-    struct thread *front = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
-    if (front->priority > current_t->priority)
-      current_t->priority = front->priority;
-  }
+		struct thread *first_thread = list_entry (list_front (&current_t->list_donate), struct thread, list_donate_elem);
+		if (current_t->priority < first_thread->priority)
+		current_t->priority = first_thread->priority;
+  	}
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
